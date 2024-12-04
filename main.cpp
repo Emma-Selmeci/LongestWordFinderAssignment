@@ -8,7 +8,7 @@
 
 std::vector<std::string> readFile(Szokereso &szokereso) {
     std::vector<std::string> v;
-    std::ifstream inputFile("../words_alpha.txt"); //TODO ezt lehet at kell irnod, hogy helyes legyen az eleresi utvonal!
+    std::ifstream inputFile("words_alpha.txt");
     if (!inputFile.is_open()) {
         throw std::runtime_error("Failed to open file");
     }
@@ -47,10 +47,8 @@ TEST("alpentuqp -> 8") {
              true); //Check if you used only the allowed characters
     CHECK_GE(result.length(), (size_t) 8);
     CHECK_GE(50000L*letters.size(), solutionTime);
-    std::cout << "alpentuqpEND\n";
 }
 TEST("lmjdiniwlq -> 8") {
-    std::cout << "lmjdiniwlg0\n";
     std::string letters = "lmjdiniwlq";
     Szokereso szokereso = Szokereso();
     std::vector<std::string> raw = readFile(szokereso);

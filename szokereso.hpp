@@ -2,55 +2,59 @@
 #define SZOKERESO_HPP
 
 #include <string>
-#include <iostream>
 
-/* I have to say that I'd use a different design pattern if given the chance - maybe a sort of factory that takes words and returns the object after finalization
- * This class is finalized when play() is called for the first time - words cannot be inserted into the word-bank after that point
- * The words are stored in a character-tree but not in alphabetical order but by the frequency of the letters
+/*
+ * The class stores the input words in alphabetical order, getting an ordered set of characters
+ * These characters are stored in alphabetical order in a tree where each route from node to leaf represents a word
+ * We can quickly find the longest possible solution if we order our query set in alphabetical order as well
+ * There are some extra optimisations such as a dynamic number of children and saving the longest possible route from each Node
+ * This last optimisation makes it so that words cannot be inserted after calling play() for the first time
+ *
+ * I don't know much about threads but play() is definitely not Thread-safe, as static members of Node are used
  */
 
-class Szokereso {
-    //I'm storing the letters by frequency to save on memory and hopefully speed as well
-    //The fastest approach would use some formula to calculate the letters which are most likely to be parts of long words
-    const static unsigned char FREQUENCY_TO_CHAR[]; //Stores letters by frequency https://www3.nd.edu/~busiforc/handouts/cryptography/letterfrequencies.html
-    static int CHAR_TO_FREQUENCY[0x7b]; //Same but the inverse - more explanation at population
-    const static int NUMBER_OF_LETTERS_IN_THE_ENGLISH_ALPHABET = 26;
-
-    static bool isCharBankInitialized;
-    bool isWordBankInitialized = false;
-    int recordWordSize;
+class Szokereso{
+    bool isInitialized = false;
 
     class Node {
     public:
-        bool canEnd = false; //Tells if this node is the end of a particular word or not
+        int numOfChildren = 0;
+        unsigned int wordSize = 0; //The longest possible word down the tree
+        std::string innerString; //Should have size 0 by default, this indicates that the this Node is not the end of any word
         Node** children;
-        int numOfChildren = 0; //We dynamically allocate children Node*s to save on performance. Node*s are ordered by frequency so this hopefully results in as few redundant Node*s as possible
-        int wordSize;
+        Node* addChar(int offset); //Method used to add a new child to the tree or return an existing one
+        unsigned int setLength(int);
+        bool search(char, int);
         ~Node() {
-            //My first programming warcrime - deleting children
+            //My first programming war crime - deleting children
+            if(numOfChildren == 0) return; //We don't delete garbage
             for(int i = 0; i < numOfChildren; ++i) {
                 if(children[i] != nullptr) delete children[i];
             }
-            if(numOfChildren != 0) delete[] children; //We don't delete garbage
+            delete[] children;
         }
-        Node* addChar(unsigned char); //This function increases the size of the array if needed and returns the pointer to the corresponding child
-        int setLength(int);
+
+        static std::string searchPhrase; //The character set that we're using as a query
+        static unsigned int currentMax; //The longest word we've yet found
+        static Node* nodeMax; //The Node corresponding to the longest word
     };
 
-    Node* head = new Node();
-
-    char search(Node*);
-
+    Node* head = new Node{};
 public:
-    Szokereso();
-
-    void insertWord(std::string word);
-
-    std::string play(std::string characters);
-
+    Szokereso() = default;
     ~Szokereso(){
         delete head;
     }
+
+    //No shallow copy allowed!
+    Szokereso(const Szokereso& other) = delete;
+    Szokereso operator=(const Szokereso& other) = delete;
+
+    void insertWord(std::string word);
+    std::string play(std::string characters);
+
 };
+
+
 
 #endif //SZOKERESO_HPP
